@@ -8,3 +8,5 @@ class Profile(db.Model):
     photo_url = db.Column(db.String(255), nullable=True)
     availability = db.Column(db.String(255), nullable=True)
     location = db.Column(db.String(100), nullable=True)
+    offered_skills = db.Column(db.Text, nullable=True)  # Stored as comma-separated strings
+    required_skills = db.Column(db.Text, nullable=True) # Stored as comma-separated strings

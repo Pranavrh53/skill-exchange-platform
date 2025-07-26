@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Login from '../components/Login';
 import Signup from '../components/Signup';
 
 const Auth = () => {
+  const [isLogin, setIsLogin] = useState(true);
+
   return (
-    <div className="flex justify-center space-x-8">
-      <Login />
-      <Signup />
+    <div className="relative">
+      {isLogin ? (
+        <Login onSwitchToSignup={() => setIsLogin(false)} />
+      ) : (
+        <Signup onSwitchToLogin={() => setIsLogin(true)} />
+      )}
     </div>
   );
 };

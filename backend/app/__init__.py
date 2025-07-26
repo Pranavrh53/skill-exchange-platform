@@ -17,7 +17,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
-    CORS(app)
+    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
     # Import models to register with SQLAlchemy
     try:
@@ -44,7 +44,7 @@ def create_app(config_class=Config):
     from . import models
     
     # Create tables if they don't exist
-    with app.app_context():
-        db.create_all()
+    # with app.app_context():
+    #     db.create_all() # Handled by Flask-Migrate
 
     return app
