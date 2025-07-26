@@ -1,0 +1,3 @@
+-- This is optional seed data. You can add sample users, skills, etc.
+-- Example:
+-- INSERT INTO `skills` (`name`) VALUES ('Python'), ('Graphic Design'), ('React.js'), ('Flask');

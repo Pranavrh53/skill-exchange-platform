@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Cors
+Flask-Bcrypt
+PyMySQL
+python-dotenv
+PyJWT
+requests
+google-auth
+Flask-SocketIO
