@@ -21,10 +21,7 @@ const Login = () => {
       const response = await login(formData);
       console.log('Login successful:', response.data);
       
-      // Store the token in localStorage
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-      }
+
       
       alert('Login successful!');
       navigate('/dashboard');

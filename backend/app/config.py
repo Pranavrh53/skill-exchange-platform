@@ -17,4 +17,4 @@ class Config:
     )
     print(f"Database URI: {SQLALCHEMY_DATABASE_URI}")  # Debug output
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'super-secret-key-for-dev'

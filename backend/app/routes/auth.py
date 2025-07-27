@@ -35,6 +35,6 @@ def login():
 
     if user and user.check_password(password):
         token = generate_token(user.id)
-        return jsonify({'token': token})
+        return jsonify({'token': token, 'userId': user.id})
 
     return jsonify({'message': 'Invalid credentials'}), 401

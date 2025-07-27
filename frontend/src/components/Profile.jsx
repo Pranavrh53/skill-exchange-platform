@@ -6,43 +6,80 @@ const Profile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState({
     bio: '',
-    photo: '',
-    offered_skills: [],
-    required_skills: [],
-    availability: ''
+    photo_url: '',
+    availability: '',
+    location: ''
   });
+  const [offeredSkills, setOfferedSkills] = useState('');
+  const [requiredSkills, setRequiredSkills] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await getProfile(token);
-        const { data } = response;
-        setProfile({
-          bio: data.bio || '',
-          photo: data.photo || '',
-          offered_skills: data.offered_skills || [],
-          required_skills: data.required_skills || [],
-          availability: data.availability || ''
-        });
-        setLoading(false);
+        const userId = localStorage.getItem('userId');
+        if (!token || !userId) {
+          console.log('No token or userId found, redirecting to login');
+          navigate('/login');
+          return;
+        }
+        
+        console.log('Fetching profile with token:', token);
+        const response = await getProfile(userId, token);
+        console.log('Profile response:', response);
+        
+        if (response.data) {
+          setProfile({
+            bio: response.data.bio || '',
+            photo: response.data.photo || '',
+            offered_skills: response.data.offered_skills || [],
+            required_skills: response.data.required_skills || [],
+            availability: response.data.availability || ''
+          });
+        }
       } catch (error) {
-        console.error('Failed to fetch profile', error);
+        console.error('Failed to fetch profile:', error);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+          if (error.response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            navigate('/login');
+          }
+        }
+      } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [navigate]);
 
     const onChange = e => {
     const { name, value } = e.target;
-    if (name === 'offered_skills' || name === 'required_skills') {
-      setProfile({ ...profile, [name]: value.split(',').map(skill => skill.trim()) });
+    setProfile(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSkillsChange = (e, type) => {
+    const value = e.target.value;
+    if (type === 'offered') {
+      setOfferedSkills(value);
     } else {
-      setProfile({ ...profile, [name]: value });
+      setRequiredSkills(value);
     }
+  };
+
+  const formatSkills = (skillsString) => {
+    return skillsString.split(',')
+      .map(skill => skill.trim())
+      .filter(skill => skill.length > 0)
+      .map(skill => ({
+        name: skill,
+        id: skill.toLowerCase().replace(/\s+/g, '-')
+      }));
   };
 
   const onFileChange = e => {
@@ -57,12 +94,38 @@ const Profile = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await updateProfile(profile, token);
-      alert('Profile updated successfully!');
-      navigate('/dashboard');
+      const userId = localStorage.getItem('userId');
+      if (!token || !userId) {
+        alert('You must be logged in to update your profile.');
+        return;
+      }
+      
+      // Prepare the profile data according to the database schema
+      const profileData = {
+        ...profile,
+        offered_skills: formatSkills(offeredSkills),
+        required_skills: formatSkills(requiredSkills)
+      };
+      
+      console.log('Updating profile with data:', profileData);
+      const response = await updateProfile(userId, profileData, token);
+      console.log('Update response:', response);
+      
+      if (response && response.status === 200) {
+        alert('Profile updated successfully!');
+        navigate('/dashboard');
+      } else {
+        throw new Error('Failed to update profile');
+      }
     } catch (error) {
-      console.error('Failed to update profile', error);
-      alert('Failed to update profile');
+      console.error('Failed to update profile:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        alert(`Failed to update profile: ${error.response.data?.message || error.message}`);
+      } else {
+        alert(`Failed to update profile: ${error.message}`);
+      }
     }
   };
   
@@ -87,11 +150,23 @@ const Profile = () => {
             {/* Photo Upload */}
             <div className="flex items-center space-x-6 p-6 bg-gray-50 rounded-xl border border-gray-200">
               <div className="shrink-0">
-                <img className="h-24 w-24 object-cover rounded-full shadow-md" src={profile.photo || 'https://via.placeholder.com/150'} alt="Current profile photo" />
+                <img className="h-24 w-24 object-cover rounded-full shadow-md" src={profile.photo_url || 'https://via.placeholder.com/150'} alt="Profile" />
               </div>
               <label className="block">
                 <span className="sr-only">Choose profile photo</span>
-                <input type="file" onChange={onFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                <input 
+                  type="file" 
+                  onChange={onFileChange} 
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                <input
+                  type="text"
+                  name="photo_url"
+                  value={profile.photo_url || ''}
+                  onChange={onChange}
+                  placeholder="Or enter image URL"
+                  className="mt-2 w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </label>
             </div>
 
@@ -105,14 +180,41 @@ const Profile = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <label htmlFor="offered-skills" className="block text-lg font-medium text-gray-800 mb-2">Skills You Offer</label>
-                <input type="text" id="offered-skills" name="offered_skills" value={Array.isArray(profile.offered_skills) ? profile.offered_skills.join(', ') : ''} onChange={onChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" placeholder="e.g., React, Python, Graphic Design"/>
+                <input 
+                  type="text" 
+                  id="offered-skills" 
+                  value={offeredSkills} 
+                  onChange={(e) => handleSkillsChange(e, 'offered')} 
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                  placeholder="e.g., React, Python, Graphic Design"
+                />
                 <p className="text-sm text-gray-500 mt-2">Separate skills with a comma.</p>
               </div>
               <div>
                 <label htmlFor="required-skills" className="block text-lg font-medium text-gray-800 mb-2">Skills You Need</label>
-                <input type="text" id="required-skills" name="required_skills" value={Array.isArray(profile.required_skills) ? profile.required_skills.join(', ') : ''} onChange={onChange} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" placeholder="e.g., SEO, Marketing, Public Speaking"/>
+                <input 
+                  type="text" 
+                  id="required-skills" 
+                  value={requiredSkills} 
+                  onChange={(e) => handleSkillsChange(e, 'required')} 
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                  placeholder="e.g., SEO, Marketing, Public Speaking"
+                />
                 <p className="text-sm text-gray-500 mt-2">Separate skills with a comma.</p>
               </div>
+            </div>
+            
+            <div>
+              <label htmlFor="location" className="block text-lg font-medium text-gray-800 mb-2">Location</label>
+              <input 
+                type="text" 
+                id="location" 
+                name="location" 
+                value={profile.location || ''} 
+                onChange={onChange} 
+                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                placeholder="e.g., New York, NY"
+              />
             </div>
 
             {/* Availability Section */}
