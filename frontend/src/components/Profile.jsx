@@ -17,26 +17,55 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        console.log('=== Starting profile fetch ===');
         const token = localStorage.getItem('token');
         const userId = localStorage.getItem('userId');
-        if (!token || !userId) {
-          console.log('No token or userId found, redirecting to login');
+        
+        console.log('Retrieved from localStorage:', { token: !!token, userId });
+        
+        if (!token) {
+          console.error('No authentication token found in localStorage');
           navigate('/login');
           return;
         }
         
-        console.log('Fetching profile with token:', token);
-        const response = await getProfile(userId, token);
-        console.log('Profile response:', response);
+        if (!userId) {
+          console.error('No user ID found in localStorage');
+          navigate('/login');
+          return;
+        }
         
-        if (response.data) {
+        console.log('Fetching profile for user ID:', userId);
+        const response = await getProfile(token);
+        console.log('Profile API response:', response);
+        
+        if (response && response.data) {
+          console.log('Profile data received:', response.data);
+          
           setProfile({
             bio: response.data.bio || '',
-            photo: response.data.photo || '',
-            offered_skills: response.data.offered_skills || [],
-            required_skills: response.data.required_skills || [],
-            availability: response.data.availability || ''
+            photo_url: response.data.photo || response.data.photo_url || '',
+            availability: response.data.availability || '',
+            location: response.data.location || ''
           });
+          
+          if (response.data.offered_skills) {
+            const offered = Array.isArray(response.data.offered_skills) 
+              ? response.data.offered_skills.join(', ')
+              : response.data.offered_skills;
+            console.log('Setting offered skills:', offered);
+            setOfferedSkills(offered);
+          }
+          
+          if (response.data.required_skills) {
+            const required = Array.isArray(response.data.required_skills)
+              ? response.data.required_skills.join(', ')
+              : response.data.required_skills;
+            console.log('Setting required skills:', required);
+            setRequiredSkills(required);
+          }
+        } else {
+          console.error('No data in profile response:', response);
         }
       } catch (error) {
         console.error('Failed to fetch profile:', error);
@@ -75,11 +104,7 @@ const Profile = () => {
   const formatSkills = (skillsString) => {
     return skillsString.split(',')
       .map(skill => skill.trim())
-      .filter(skill => skill.length > 0)
-      .map(skill => ({
-        name: skill,
-        id: skill.toLowerCase().replace(/\s+/g, '-')
-      }));
+      .filter(skill => skill.length > 0);
   };
 
   const onFileChange = e => {
@@ -108,7 +133,7 @@ const Profile = () => {
       };
       
       console.log('Updating profile with data:', profileData);
-      const response = await updateProfile(userId, profileData, token);
+      const response = await updateProfile(profileData, token);
       console.log('Update response:', response);
       
       if (response && response.status === 200) {

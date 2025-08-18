@@ -6,6 +6,7 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from .config import Config
 
+
 db = SQLAlchemy()
 migrate = Migrate()
 bcrypt = Bcrypt()
@@ -17,7 +18,27 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+    # Configure CORS with more permissive settings for development
+    CORS(app, 
+         resources={
+             r"/api/*": {
+                 "origins": ["http://localhost:3000", "http://127.0.0.1:3000"],
+                 "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+                 "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+                 "supports_credentials": True,
+                 "expose_headers": ["Content-Type", "X-Total-Count", "Content-Disposition"],
+                 "max_age": 600  # Cache preflight request for 10 minutes
+             }
+         })
+    
+    # Add CORS headers to all responses
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
     # Import models to register with SQLAlchemy
     try:
