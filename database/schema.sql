@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS `profiles` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `user_id` INT UNIQUE NOT NULL,
   `bio` TEXT,
-  `photo_url` VARCHAR(255),
+  `photo_url` TEXT,
   `availability` VARCHAR(255),
   `location` VARCHAR(100),
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)

@@ -19,12 +19,11 @@ const Login = () => {
     try {
       console.log('Login attempt with:', formData);
       const response = await login(formData);
-      console.log('Login successful:', response.data);
-      
-
-      
-      alert('Login successful!');
-      navigate('/dashboard');
+      if (response.data.has_profile) {
+        navigate('/dashboard');
+      } else {
+        navigate('/create-profile');
+      }
     } catch (error) {
       console.error('Login error:', error);
       alert('Login failed: ' + (error.response?.data?.message || error.message));

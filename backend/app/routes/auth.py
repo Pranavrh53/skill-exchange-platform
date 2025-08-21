@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app import db
-from app.models import User
+from app.models import User, Profile
 from app.utils.auth import generate_token
 
 auth_bp = Blueprint('auth', __name__)
@@ -23,7 +23,10 @@ def signup():
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({'message': 'User created successfully'}), 201
+    token = generate_token(new_user.id)
+    return jsonify({'token': token, 'userId': new_user.id, 'has_profile': False}), 201
+
+    
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -35,6 +38,7 @@ def login():
 
     if user and user.check_password(password):
         token = generate_token(user.id)
-        return jsonify({'token': token, 'userId': user.id})
+        has_profile = True if user.profile else False
+        return jsonify({'token': token, 'userId': user.id, 'has_profile': has_profile})
 
     return jsonify({'message': 'Invalid credentials'}), 401

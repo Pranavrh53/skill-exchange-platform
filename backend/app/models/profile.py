@@ -1,3 +1,4 @@
+# backend/app/models/profile.py
 from app import db
 
 class Profile(db.Model):
@@ -5,8 +6,10 @@ class Profile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
     bio = db.Column(db.Text, nullable=True)
-    photo_url = db.Column(db.String(255), nullable=True)
+    photo_url = db.Column(db.Text, nullable=True)
     availability = db.Column(db.String(255), nullable=True)
     location = db.Column(db.String(100), nullable=True)
     offered_skills = db.Column(db.Text, nullable=True)  # Stored as comma-separated strings
     required_skills = db.Column(db.Text, nullable=True) # Stored as comma-separated strings
+
+    user = db.relationship('User', back_populates='profile')

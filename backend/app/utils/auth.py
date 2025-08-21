@@ -7,7 +7,7 @@ def generate_token(user_id):
         payload = {
             'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1),
             'iat': datetime.datetime.utcnow(),
-            'sub': user_id
+            'sub': str(user_id)  # Ensure user_id is stored as string for consistency
         }
         return jwt.encode(
             payload,
@@ -25,3 +25,5 @@ def decode_token(token):
         return 'Token expired. Please log in again.'
     except jwt.InvalidTokenError:
         return 'Invalid token. Please log in again.'
+    except Exception as e:
+        return f'Token validation error: {str(e)}'

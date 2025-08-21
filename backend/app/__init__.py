@@ -18,6 +18,8 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
+
+    
     # Configure CORS with more permissive settings for development
     CORS(app, 
          resources={
@@ -31,14 +33,6 @@ def create_app(config_class=Config):
              }
          })
     
-    # Add CORS headers to all responses
-    @app.after_request
-    def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
 
     # Import models to register with SQLAlchemy
     try:
@@ -55,7 +49,7 @@ def create_app(config_class=Config):
     from .routes.sessions import sessions_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(profile_bp, url_prefix='/api/profile')
+    app.register_blueprint(profile_bp, url_prefix='/api/profile', strict_slashes=False)
     app.register_blueprint(portfolio_bp, url_prefix='/api/portfolio')
     app.register_blueprint(matching_bp, url_prefix='/api/matches')
     app.register_blueprint(chat_bp, url_prefix='/api/chat')

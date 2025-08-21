@@ -19,7 +19,7 @@ class User(db.Model):
     google_id = db.Column(db.String(120), unique=True, nullable=True)
     created_at = db.Column(db.TIMESTAMP, server_default=db.func.now())
 
-    profile = db.relationship('Profile', backref='user', uselist=False, cascade="all, delete-orphan")
+    profile = db.relationship('Profile', back_populates='user', uselist=False, cascade="all, delete-orphan")
     portfolios = db.relationship('Portfolio', backref='user', lazy=True, cascade="all, delete-orphan")
     offered_skills = db.relationship('Skill', secondary=user_offered_skills, lazy='subquery',
                                      backref=db.backref('users_offering', lazy=True))

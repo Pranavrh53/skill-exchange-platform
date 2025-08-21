@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
 
-import { Link } from 'react-router-dom';
-import { getProfile } from '../api/profile';
+import { Link, useNavigate } from 'react-router-dom';
+import { getProfile, checkProfileStatus } from '../api/profile';
 
 const Dashboard = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const { data } = await getProfile(token);
-        setProfile(data);
+        const statusRes = await checkProfileStatus(token);
+        if (!statusRes.data.has_profile) {
+          navigate('/create-profile');
+          return;
+        }
+
+        const profileRes = await getProfile(token);
+        setProfile(profileRes.data);
       } catch (error) {
         console.error('Failed to fetch profile', error);
       } finally {
@@ -21,7 +28,7 @@ const Dashboard = () => {
     };
 
     fetchProfile();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><p>Loading Dashboard...</p></div>;

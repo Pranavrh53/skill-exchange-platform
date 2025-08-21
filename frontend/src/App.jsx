@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import Profile from './components/Profile';
 import Login from './components/Login';
 import Signup from './components/Signup';
+import CreateProfile from './components/CreateProfile';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/create-profile" element={<CreateProfile />} />
           {/* Add other routes here */}
         </Routes>
       </div>

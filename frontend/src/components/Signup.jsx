@@ -26,9 +26,10 @@ const Signup = () => {
       const userData = { name, email, password };
       console.log('Signup attempt with:', userData);
       const response = await signup(userData);
-      console.log('Signup successful:', response.data);
-      alert('Signup successful! Please login.');
-      navigate('/login');
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        navigate('/create-profile');
+      }
     } catch (error) {
       console.error('Signup error:', error);
       alert('Signup failed: ' + (error.response?.data?.message || error.message));
