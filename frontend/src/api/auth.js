@@ -29,3 +29,26 @@ export const login = async (credentials) => {
     
     return response;
 };
+
+export const logout = async () => {
+    try {
+        // Clear local storage
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        
+        // Optional: Call backend logout endpoint if you have one
+        // await axios.post(`${API_URL}/logout`, {}, {
+        //     headers: {
+        //         'Authorization': `Bearer ${localStorage.getItem('token')}`
+        //     }
+        // });
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Even if there's an error, clear local storage
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        throw error;
+    }
+};

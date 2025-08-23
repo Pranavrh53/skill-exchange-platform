@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updateProfile } from '../api/profile';
-import { FaUserCircle, FaBriefcase, FaLightbulb, FaMapMarkerAlt, FaClock, FaCamera } from 'react-icons/fa';
+import { FaUserCircle, FaBriefcase, FaLightbulb, FaMapMarkerAlt, FaClock, FaCamera, FaUpload, FaLink } from 'react-icons/fa';
 
 const CreateProfile = () => {
     const [formData, setFormData] = useState({
@@ -14,7 +14,79 @@ const CreateProfile = () => {
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('link'); // 'link' or 'upload'
+    const [photoPreview, setPhotoPreview] = useState('');
     const navigate = useNavigate();
+    const fileInputRef = React.useRef();
+
+    const compressImage = (file, maxWidth = 400, maxHeight = 400, quality = 0.7) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Calculate new dimensions
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height *= maxWidth / width;
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width *= maxHeight / height;
+                            height = maxHeight;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Convert to base64 with specified quality
+                    const base64 = canvas.toDataURL('image/jpeg', quality);
+                    resolve(base64);
+                };
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Check file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            setError('Image size should be less than 2MB');
+            return;
+        }
+
+        try {
+            const compressedImage = await compressImage(file);
+            setPhotoPreview(compressedImage);
+            setFormData(prev => ({ ...prev, photo_url: compressedImage }));
+            setError('');
+        } catch (error) {
+            console.error('Error processing image:', error);
+            setError('Failed to process image. Please try another one.');
+        }
+    };
+
+    const handlePhotoUrlChange = (e) => {
+        const url = e.target.value;
+        setFormData(prev => ({ ...prev, photo_url: url }));
+        if (url) {
+            setPhotoPreview(url);
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -97,8 +169,39 @@ const CreateProfile = () => {
             <div className="max-w-2xl w-full space-y-8">
                 <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 p-8 transform transition-all duration-300 hover:shadow-2xl">
                     <div className="text-center mb-8">
-                        <div className="mx-auto h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4">
-                            <FaUserCircle className="h-6 w-6 text-white" />
+                        <div className="mx-auto relative group mb-6">
+                            <div className="h-32 w-32 rounded-full overflow-hidden border-4 border-white shadow-lg mx-auto">
+                                {photoPreview ? (
+                                    <img 
+                                        src={photoPreview} 
+                                        alt="Profile preview" 
+                                        className="h-full w-full object-cover"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            setPhotoPreview('');
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="h-full w-full bg-gradient-to-r from-blue-100 to-purple-100 flex items-center justify-center">
+                                        <FaUserCircle className="h-16 w-16 text-gray-400" />
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-2 shadow-lg transform transition-transform hover:scale-110 focus:outline-none"
+                                title="Upload photo"
+                            >
+                                <FaCamera className="h-4 w-4" />
+                            </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                accept="image/*"
+                                className="hidden"
+                            />
                         </div>
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                             Tell Us About Yourself
@@ -114,14 +217,64 @@ const CreateProfile = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <InputField 
-                                id="photo_url" 
-                                name="photo_url" 
-                                value={formData.photo_url} 
-                                onChange={handleChange} 
-                                placeholder="Link to your profile photo" 
-                                icon={FaCamera} 
-                            />
+                            <div className="space-y-2">
+                                <div className="flex border-b border-gray-200">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('link')}
+                                        className={`px-4 py-2 text-sm font-medium ${activeTab === 'link' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        <FaLink className="inline mr-1" /> Link
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('upload')}
+                                        className={`px-4 py-2 text-sm font-medium ${activeTab === 'upload' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        <FaUpload className="inline mr-1" /> Upload
+                                    </button>
+                                </div>
+                                
+                                {activeTab === 'link' ? (
+                                    <InputField 
+                                        id="photo_url" 
+                                        name="photo_url" 
+                                        value={formData.photo_url} 
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            handlePhotoUrlChange(e);
+                                        }}
+                                        placeholder="Paste your profile photo URL" 
+                                        icon={FaLink} 
+                                    />
+                                ) : (
+                                    <div className="mt-2">
+                                        <div className="flex items-center justify-center w-full">
+                                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                    <FaUpload className="w-8 h-8 mb-2 text-gray-500" />
+                                                    <p className="mb-2 text-sm text-gray-500">
+                                                        <span className="font-semibold">Click to upload</span> or drag and drop
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">PNG, JPG, GIF (MAX. 5MB)</p>
+                                                </div>
+                                                <input 
+                                                    type="file" 
+                                                    className="hidden" 
+                                                    onChange={handleFileChange}
+                                                    accept="image/*"
+                                                    ref={fileInputRef}
+                                                />
+                                            </label>
+                                        </div>
+                                        {photoPreview && (
+                                            <p className="mt-2 text-sm text-green-600 text-center">
+                                                Image selected! Click the camera icon to change.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                             <InputField 
                                 id="location" 
                                 name="location" 
