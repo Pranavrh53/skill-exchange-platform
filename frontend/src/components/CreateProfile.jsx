@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updateProfile } from '../api/profile';
 import { FaUserCircle, FaBriefcase, FaLightbulb, FaMapMarkerAlt, FaClock, FaCamera, FaUpload, FaLink } from 'react-icons/fa';
@@ -88,9 +88,13 @@ const CreateProfile = () => {
         }
     };
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+    const handleChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -147,7 +151,7 @@ const CreateProfile = () => {
         }
     };
 
-    const InputField = ({ id, name, value, onChange, placeholder, icon: Icon }) => (
+    const InputField = React.memo(({ id, name, value, onChange, placeholder, icon: Icon }) => (
         <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Icon className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-blue-500" />
@@ -162,7 +166,11 @@ const CreateProfile = () => {
                 className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400 hover:bg-white focus:bg-white"
             />
         </div>
-    );
+    ), (prevProps, nextProps) => {
+        // Only re-render if these specific props change
+        return prevProps.value === nextProps.value && 
+               prevProps.placeholder === nextProps.placeholder;
+    });
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -239,103 +247,124 @@ const CreateProfile = () => {
                                     <InputField 
                                         id="photo_url" 
                                         name="photo_url" 
-                                        value={formData.photo_url} 
+                                        value={formData.photo_url}
                                         onChange={(e) => {
                                             handleChange(e);
                                             handlePhotoUrlChange(e);
                                         }}
-                                        placeholder="Paste your profile photo URL" 
-                                        icon={FaLink} 
+                                        placeholder="Paste image URL"
+                                        icon={FaLink}
                                     />
                                 ) : (
                                     <div className="mt-2">
-                                        <div className="flex items-center justify-center w-full">
-                                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                    <FaUpload className="w-8 h-8 mb-2 text-gray-500" />
-                                                    <p className="mb-2 text-sm text-gray-500">
-                                                        <span className="font-semibold">Click to upload</span> or drag and drop
-                                                    </p>
-                                                    <p className="text-xs text-gray-500">PNG, JPG, GIF (MAX. 5MB)</p>
-                                                </div>
-                                                <input 
-                                                    type="file" 
-                                                    className="hidden" 
-                                                    onChange={handleFileChange}
-                                                    accept="image/*"
-                                                    ref={fileInputRef}
-                                                />
-                                            </label>
-                                        </div>
-                                        {photoPreview && (
-                                            <p className="mt-2 text-sm text-green-600 text-center">
-                                                Image selected! Click the camera icon to change.
-                                            </p>
-                                        )}
+                                        <label
+                                            htmlFor="file-upload"
+                                            className="w-full px-4 py-3 bg-blue-50 text-blue-700 rounded-xl border-2 border-dashed border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer flex items-center justify-center space-x-2"
+                                        >
+                                            <FaUpload className="h-5 w-5" />
+                                            <span>Choose a file</span>
+                                        </label>
+                                        <input
+                                            id="file-upload"
+                                            name="file-upload"
+                                            type="file"
+                                            className="sr-only"
+                                            onChange={handleFileChange}
+                                            accept="image/*"
+                                        />
                                     </div>
                                 )}
                             </div>
-                            <InputField 
-                                id="location" 
-                                name="location" 
-                                value={formData.location} 
-                                onChange={handleChange} 
-                                placeholder="Your location (e.g., City, Country)" 
-                                icon={FaMapMarkerAlt} 
-                            />
-                            <InputField 
-                                id="availability" 
-                                name="availability" 
-                                value={formData.availability} 
-                                onChange={handleChange} 
-                                placeholder="Your availability (e.g., Weekends)" 
-                                icon={FaClock} 
-                            />
-                        </div>
 
-                        <div>
-                            <div className="relative group">
-                                <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                                    <FaBriefcase className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-blue-500" />
+                            {/* Bio */}
+                            <div className="space-y-2 col-span-2">
+                                <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
+                                    About You
+                                </label>
+                                <div className="relative">
+                                    <textarea
+                                        id="bio"
+                                        name="bio"
+                                        value={formData.bio}
+                                        onChange={handleChange}
+                                        placeholder="Tell us about yourself and what you're passionate about..."
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400 hover:bg-white focus:bg-white min-h-[120px]"
+                                        rows="4"
+                                    />
                                 </div>
-                                <textarea
-                                    id="bio"
-                                    name="bio"
-                                    value={formData.bio}
+                            </div>
+
+                            {/* Skills Section */}
+                            <div className="space-y-2">
+                                <label htmlFor="offered_skills" className="block text-sm font-medium text-gray-700">
+                                    Skills You Can Offer
+                                </label>
+                                <InputField 
+                                    id="offered_skills" 
+                                    name="offered_skills" 
+                                    value={formData.offered_skills} 
                                     onChange={handleChange}
-                                    placeholder="Share a bit about yourself, your interests, and what you're passionate about."
-                                    rows="4"
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400 hover:bg-white focus:bg-white"
-                                ></textarea>
+                                    placeholder="e.g., Web Development, Graphic Design, Cooking"
+                                    icon={FaLightbulb}
+                                    key="offered_skills"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label htmlFor="required_skills" className="block text-sm font-medium text-gray-700">
+                                    Skills You're Looking For
+                                </label>
+                                <InputField 
+                                    id="required_skills" 
+                                    name="required_skills" 
+                                    value={formData.required_skills} 
+                                    onChange={handleChange}
+                                    placeholder="e.g., Photography, Language Tutoring, Home Repairs"
+                                    icon={FaBriefcase}
+                                    key="required_skills"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                                    Location
+                                </label>
+                                <InputField 
+                                    id="location" 
+                                    name="location" 
+                                    value={formData.location} 
+                                    onChange={handleChange}
+                                    placeholder="e.g., New York, NY or Remote"
+                                    icon={FaMapMarkerAlt}
+                                    key="location"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label htmlFor="availability" className="block text-sm font-medium text-gray-700">
+                                    Availability
+                                </label>
+                                <InputField 
+                                    id="availability" 
+                                    name="availability" 
+                                    value={formData.availability} 
+                                    onChange={handleChange}
+                                    placeholder="e.g., Weekends, Evenings, Flexible"
+                                    icon={FaClock}
+                                    key="availability"
+                                />
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <InputField 
-                                id="offered_skills" 
-                                name="offered_skills" 
-                                value={formData.offered_skills} 
-                                onChange={handleChange} 
-                                placeholder="Skills you can offer (comma separated: Python, Guitar, Cooking)" 
-                                icon={FaLightbulb} 
-                            />
-                            <InputField 
-                                id="required_skills" 
-                                name="required_skills" 
-                                value={formData.required_skills} 
-                                onChange={handleChange} 
-                                placeholder="Skills you want to learn (comma separated: Public Speaking, Photography)" 
-                                icon={FaLightbulb} 
-                            />
+                        <div className="pt-4">
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 hover:from-blue-600 hover:to-purple-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            >
+                                {isLoading ? 'Creating Profile...' : 'Save and Continue'}
+                            </button>
                         </div>
-
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 hover:from-blue-600 hover:to-purple-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                        >
-                            {isLoading ? 'Creating Profile...' : 'Save and Continue'}
-                        </button>
                     </form>
                 </div>
             </div>

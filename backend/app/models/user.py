@@ -1,4 +1,7 @@
+import jwt
+import datetime
 from app import db, bcrypt
+from flask import current_app
 
 user_offered_skills = db.Table('user_offered_skills',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
@@ -31,3 +34,27 @@ class User(db.Model):
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+        
+    def generate_auth_token(self, expires_in=3600):
+        payload = {
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in),
+            'iat': datetime.datetime.utcnow(),
+            'sub': self.id
+        }
+        return jwt.encode(
+            payload,
+            current_app.config['SECRET_KEY'],
+            algorithm='HS256'
+        )
+
+    @staticmethod
+    def verify_auth_token(token):
+        try:
+            payload = jwt.decode(
+                token,
+                current_app.config['SECRET_KEY'],
+                algorithms=['HS256']
+            )
+            return User.query.get(payload['sub'])
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+            return None

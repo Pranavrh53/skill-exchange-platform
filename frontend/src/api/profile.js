@@ -26,3 +26,9 @@ export const checkProfileStatus = (token) => {
     headers: getAuthHeaders(token)
   });
 };
+
+export const getUserProfile = (userId, token) => {
+  return axios.get(`${API_BASE_URL}/api/users/${userId}`, {
+    headers: getAuthHeaders(token)
+  });
+};

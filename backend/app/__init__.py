@@ -47,13 +47,20 @@ def create_app(config_class=Config):
     from .routes.matching import matching_bp
     from .routes.chat import chat_bp
     from .routes.sessions import sessions_bp
+    from .routes.matches import bp as matches_bp
+    from .routes.skills import bp as skills_bp
+    from .routes.users import bp as users_bp
 
+    # Register blueprints with their respective URL prefixes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(profile_bp, url_prefix='/api/profile', strict_slashes=False)
     app.register_blueprint(portfolio_bp, url_prefix='/api/portfolio')
-    app.register_blueprint(matching_bp, url_prefix='/api/matches')
+    app.register_blueprint(matches_bp, url_prefix='/api')
     app.register_blueprint(chat_bp, url_prefix='/api/chat')
+    app.register_blueprint(skills_bp, url_prefix='/api')
     app.register_blueprint(sessions_bp, url_prefix='/api/sessions')
+    app.register_blueprint(matching_bp, url_prefix='/api/matching')
+    app.register_blueprint(users_bp)
 
     # Import models to ensure they are registered with SQLAlchemy
     from . import models
