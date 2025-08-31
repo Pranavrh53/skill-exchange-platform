@@ -44,11 +44,7 @@ function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/matches" element={
-            <ProtectedRoute>
-              <Matches />
-            </ProtectedRoute>
-          } />
+          <Route path="/matches" element={<Matches />} />
           
           <Route path="/users" element={
             <ProtectedRoute>
